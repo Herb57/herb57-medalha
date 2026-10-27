@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Herb57 · Medalha e foto</title>
+<meta name="description" content="Pegue sua medalha do Quiz do Herb57 e tire sua foto com o Fusca que fala.">
+<meta name="theme-color" content="#0B1220">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Caveat:wght@700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  /*
+   * Herb57 — página da medalha do quiz e da moldura de foto.
+   * Hospedagem: estática (GitHub Pages). Nada é enviado a servidor: a imagem é
+   * montada no próprio celular do visitante.
+   * Parâmetros do link (gerados pelo Home Assistant no fim do quiz):
+   *   r = acertos, t = total, tema = tema do quiz, ev = evento, hs = hashtag do evento, d = data
+   * Sem r/t a página abre direto na moldura de foto (QR impresso).
+   */
+  :root {
+    --bg: #0B1220; --card: #141C2E; --card2: #1B2540; --txt: #EEF2FA; --mut: #9AA6BF;
+    --acc: #3B82F6; --acc2: #2563EB; --ok: #22C55E; --borda: #26324D;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--txt);
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 560px; margin: 0 auto; padding: 16px 16px 40px; }
+  header { display: flex; align-items: center; gap: 12px; margin: 4px 0 14px; }
+  header .logo { width: 44px; height: 44px; border-radius: 12px; background: var(--acc);
+    display: grid; place-items: center; font-family: Anton, sans-serif; font-size: 22px; letter-spacing: .5px; }
+  header h1 { font-size: 18px; margin: 0; line-height: 1.2; }
+  header p { margin: 2px 0 0; color: var(--mut); font-size: 13px; }
+  .abas { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--card); padding: 5px;
+    border-radius: 14px; margin-bottom: 14px; }
+  .abas button { border: 0; border-radius: 10px; padding: 11px 6px; font: 600 14px Inter, sans-serif;
+    background: transparent; color: var(--mut); }
+  .abas button.on { background: var(--acc2); color: #fff; }
+  .abas.so-uma { display: none; }
+  .bloco { background: var(--card); border-radius: 16px; padding: 14px; margin-bottom: 12px; }
+  label.rot { display: block; font-size: 13px; color: var(--mut); margin: 0 0 6px; }
+  input[type=text] { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--borda);
+    background: var(--card2); color: var(--txt); font: 16px Inter, sans-serif; }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .seg button { border: 1px solid var(--borda); background: var(--card2); color: var(--txt); border-radius: 12px;
+    padding: 10px; font: 600 14px Inter, sans-serif; }
+  .seg button.on { border-color: var(--acc); background: #1D3566; }
+  .linha { display: grid; gap: 12px; }
+  .previa { display: grid; place-items: center; background: #070C16; border-radius: 16px; padding: 10px; margin-bottom: 12px; }
+  canvas { width: 100%; height: auto; border-radius: 10px; display: block; touch-action: none; }
+  .acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 14px;
+    padding: 14px; font: 800 15px Inter, sans-serif; color: #fff; background: var(--acc2); text-decoration: none; }
+  .btn.sec { background: var(--card2); border: 1px solid var(--borda); }
+  .btn.cheio { grid-column: 1 / -1; }
+  .dica { color: var(--mut); font-size: 13px; margin: 8px 2px 0; line-height: 1.4; }
+  .zoom { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .zoom input { flex: 1; accent-color: var(--acc); }
+  .oculto { display: none !important; }
+  .aviso { background: #13314F; border: 1px solid #1E4E80; color: #CFE3FF; padding: 10px 12px; border-radius: 12px;
+    font-size: 13px; margin-top: 10px; }
+  footer { text-align: center; color: var(--mut); font-size: 12px; margin-top: 18px; }
+  footer a { color: var(--txt); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="logo" aria-hidden="true">57</div>
+    <div>
+      <h1>Herb57 · o Fusca que fala</h1>
+      <p id="sub">Sua lembrança do encontro com o Herb57</p>
+    </div>
+  </header>
+
+  <div class="abas" id="abas" role="tablist">
+    <button id="aba-medalha" class="on" role="tab">🏅 Minha medalha</button>
+    <button id="aba-foto" role="tab">📸 Foto com o Herb57</button>
+  </div>
+
+  <section class="bloco linha">
+    <div>
+      <label class="rot" for="nome">Seu nome (opcional)</label>
+      <input id="nome" type="text" maxlength="20" placeholder="Ex.: Ana" autocomplete="given-name">
+    </div>
+    <div>
+      <label class="rot">Formato</label>
+      <div class="seg" id="formato">
+        <button data-f="story" class="on">Story (vertical)</button>
+        <button data-f="post">Post (quadrado)</button>
+      </div>
+    </div>
+    <div id="op-moldura" class="oculto">
+      <label class="rot">Moldura</label>
+      <div class="seg" id="moldura">
+        <button data-m="polaroid" class="on">Polaroid</button>
+        <button data-m="destaque">Destaque</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="painel-foto" class="bloco oculto">
+    <button class="btn cheio" id="escolher" style="width:100%">📷 Tirar foto ou escolher da galeria</button>
+    <input id="arquivo" type="file" accept="image/*" class="oculto">
+    <p class="dica" id="dica-foto">Depois de escolher, arraste a foto para enquadrar e use o controle para aproximar.</p>
+    <div class="zoom oculto" id="zoom-box">
+      <span aria-hidden="true">➖</span>
+      <input id="zoom" type="range" min="1" max="3" step="0.01" value="1" aria-label="Aproximar">
+      <span aria-hidden="true">➕</span>
+    </div>
+  </section>
+
+  <div class="previa"><canvas id="tela" width="1080" height="1920" aria-label="Prévia da imagem"></canvas></div>
+
+  <div class="acoes">
+    <button class="btn" id="compartilhar">📤 Compartilhar</button>
+    <button class="btn sec" id="salvar">⬇️ Salvar imagem</button>
+  </div>
+  <p class="dica" id="dica-share">Ao postar, marque <b>@fusca.herb57</b> 💙</p>
+  <div class="aviso oculto" id="copiado">Legenda copiada! Cole ao postar.</div>
+
+  <footer>
+    Nada do que você faz aqui é enviado para a internet: a imagem é criada no seu celular.<br>
+    <a href="https://www.instagram.com/fusca.herb57/" rel="noopener">instagram.com/fusca.herb57</a>
+  </footer>
+</main>
+
+<script>
+(() => {
+  // ---------------------------------------------------------------- configuração
+  const PERFIL = "@fusca.herb57";
+  const HASHTAG_FIXA = "#Herb57";              // A DEFINIR: hashtag fixa do Fusca
+  const FOTO_MEDALHA = "img/medalha.jpg";      // opcional: foto do Herb57 de fundo da medalha
+  const NIVEIS = [
+    { id: "mestre", titulo: ["MESTRE DO FUSCA", "HERB57"], cor: ["#FCE38A", "#E0A526", "#9C6B0C"], texto: "#2B1B00" },
+    { id: "especialista", titulo: ["ESPECIALISTA DO", "FUSCA HERB57"], cor: ["#F1F4F8", "#BCC5D3", "#7D889B"], texto: "#1A2130" },
+    { id: "amigo", titulo: ["AMIGO DO FUSCA", "HERB57"], cor: ["#9CC8FF", "#3B82F6", "#1E4FB0"], texto: "#FFFFFF" },
+  ];
+
+  // ---------------------------------------------------------------- parâmetros
+  const P = new URLSearchParams(location.search);
+  const limpa = (v, n) => (v || "").replace(/[\u0000-\u001F]/g, "").trim().slice(0, n);
+  const r = parseInt(P.get("r"), 10), t = parseInt(P.get("t"), 10);
+  const temQuiz = Number.isFinite(r) && Number.isFinite(t) && t > 0 && r >= 0 && r <= t;
+  const tema = limpa(P.get("tema"), 50);
+  const evento = limpa(P.get("ev"), 90);
+  let hsEvento = limpa(P.get("hs"), 40).replace(/\s+/g, "");
+  if (hsEvento && !hsEvento.startsWith("#")) hsEvento = "#" + hsEvento;
+  const hoje = new Date();
+  const data = limpa(P.get("d"), 12) ||
+    `${String(hoje.getDate()).padStart(2, "0")}/${String(hoje.getMonth() + 1).padStart(2, "0")}/${hoje.getFullYear()}`;
+  const nivel = !temQuiz ? null : (r === t ? NIVEIS[0] : (r / t >= 0.6 ? NIVEIS[1] : NIVEIS[2]));
+  const hashtags = [HASHTAG_FIXA, hsEvento].filter(Boolean).join(" ");
+
+  // ---------------------------------------------------------------- estado
+  const st = {
+    modo: temQuiz ? "medalha" : "foto",
+    formato: "story", moldura: "polaroid", nome: "",
+    foto: null, zoom: 1, ox: 0, oy: 0,
+    fundo: null,
+  };
+  try { st.nome = localStorage.getItem("herb57_nome") || ""; } catch (e) {}
+
+  const $ = (id) => document.getElementById(id);
+  const tela = $("tela"), ctx = tela.getContext("2d");
+
+  // ---------------------------------------------------------------- utilidades de desenho
+  function tam() { return st.formato === "story" ? [1080, 1920] : [1080, 1080]; }
+  function ajustaFonte(texto, maxW, base, familia, peso = "") {
+    let s = base;
+    do { ctx.font = `${peso} ${s}px ${familia}`.trim(); s -= 2; } while (ctx.measureText(texto).width > maxW && s > 12);
+    return s + 2;
+  }
+  function texto(txt, x, y, { tamanho = 40, familia = "Inter", peso = "600", cor = "#fff", alinhar = "center", maxW = 960, sombra = false } = {}) {
+    if (!txt) return;
+    const s = ajustaFonte(txt, maxW, tamanho, familia, peso);
+    ctx.font = `${peso} ${s}px ${familia}`;
+    ctx.fillStyle = cor; ctx.textAlign = alinhar; ctx.textBaseline = "middle";
+    if (sombra) { ctx.shadowColor = "rgba(0,0,0,.55)"; ctx.shadowBlur = 18; }
+    ctx.fillText(txt, x, y);
+    ctx.shadowBlur = 0; ctx.shadowColor = "transparent";
+  }
+  function cobrir(img, x, y, w, h, zoom = 1, ox = 0, oy = 0) {
+    const esc = Math.max(w / img.width, h / img.height) * zoom;
+    const dw = img.width * esc, dh = img.height * esc;
+    const maxX = (dw - w) / 2, maxY = (dh - h) / 2;
+    const cx = Math.max(-maxX, Math.min(maxX, ox)), cy = Math.max(-maxY, Math.min(maxY, oy));
+    ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+    ctx.drawImage(img, x + (w - dw) / 2 + cx, y + (h - dh) / 2 + cy, dw, dh);
+    ctx.restore();
+    return { maxX, maxY };
+  }
+  function retRed(x, y, w, h, rr) {
+    ctx.beginPath(); ctx.moveTo(x + rr, y); ctx.arcTo(x + w, y, x + w, y + h, rr); ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr); ctx.arcTo(x, y, x + w, y, rr); ctx.closePath();
+  }
+  function selo57(cx, cy, raio, fundo = "#fff", cor = "#0B1220") {
+    ctx.beginPath(); ctx.arc(cx, cy, raio, 0, Math.PI * 2); ctx.fillStyle = fundo; ctx.fill();
+    ctx.lineWidth = raio * 0.08; ctx.strokeStyle = cor; ctx.stroke();
+    texto("57", cx, cy + raio * 0.05, { tamanho: raio * 1.05, familia: "Anton", peso: "400", cor, maxW: raio * 1.6 });
+  }
+
+  // ---------------------------------------------------------------- medalha
+  function desenhaMedalha() {
+    const [W, H] = tam(); tela.width = W; tela.height = H;
+    // fundo: foto do Herb57 (se publicada) ou degradê
+    if (st.fundo) {
+      cobrir(st.fundo, 0, 0, W, H);
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, "rgba(6,10,20,.55)"); g.addColorStop(.5, "rgba(6,10,20,.78)"); g.addColorStop(1, "rgba(6,10,20,.95)");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    } else {
+      const g = ctx.createRadialGradient(W / 2, H * 0.36, 60, W / 2, H * 0.36, H * 0.9);
+      g.addColorStop(0, "#1C3A78"); g.addColorStop(.55, "#0E1A36"); g.addColorStop(1, "#060A14");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    }
+    const story = st.formato === "story";
+    const n = nivel;
+    // medalha
+    const cx = W / 2, cy = story ? 640 : 380, raio = story ? 250 : 190;
+    // fitas
+    ctx.save();
+    ctx.fillStyle = n.cor[2];
+    ctx.beginPath(); ctx.moveTo(cx - raio * 0.55, cy - raio * 1.75); ctx.lineTo(cx - raio * 0.05, cy - raio * 1.75);
+    ctx.lineTo(cx + raio * 0.25, cy - raio * 0.7); ctx.lineTo(cx - raio * 0.25, cy - raio * 0.7); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = n.cor[1];
+    ctx.beginPath(); ctx.moveTo(cx + raio * 0.55, cy - raio * 1.75); ctx.lineTo(cx + raio * 0.05, cy - raio * 1.75);
+    ctx.lineTo(cx - raio * 0.25, cy - raio * 0.7); ctx.lineTo(cx + raio * 0.25, cy - raio * 0.7); ctx.closePath(); ctx.fill();
+    ctx.restore();
+    const gm = ctx.createLinearGradient(cx - raio, cy - raio, cx + raio, cy + raio);
+    gm.addColorStop(0, n.cor[0]); gm.addColorStop(.5, n.cor[1]); gm.addColorStop(1, n.cor[2]);
+    ctx.shadowColor = "rgba(0,0,0,.5)"; ctx.shadowBlur = 40;
+    ctx.beginPath(); ctx.arc(cx, cy, raio, 0, Math.PI * 2); ctx.fillStyle = gm; ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.beginPath(); ctx.arc(cx, cy, raio * 0.82, 0, Math.PI * 2); ctx.lineWidth = raio * 0.05;
+    ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.stroke();
+    texto(`${r}/${t}`, cx, cy - raio * 0.12, { tamanho: raio * 0.62, familia: "Anton", peso: "400", cor: n.texto, maxW: raio * 1.4 });
+    texto("ACERTOS", cx, cy + raio * 0.42, { tamanho: raio * 0.17, peso: "800", cor: n.texto, maxW: raio * 1.2 });
+    // títulos
+    let y = cy + raio + (story ? 130 : 80);
+    texto(n.titulo[0], W / 2, y, { tamanho: story ? 92 : 64, familia: "Anton", peso: "400", cor: "#fff", maxW: W - 120 });
+    y += story ? 104 : 72;
+    texto(n.titulo[1], W / 2, y, { tamanho: story ? 92 : 64, familia: "Anton", peso: "400", cor: n.cor[0], maxW: W - 120 });
+    y += story ? 110 : 66;
+    if (st.nome) { texto(st.nome, W / 2, y, { tamanho: story ? 84 : 54, familia: "Caveat", peso: "700", cor: "#fff", maxW: W - 160 }); y += story ? 100 : 60; }
+    if (tema && tema.toLowerCase() !== "fusca") { texto(`Quiz · ${tema}`, W / 2, y, { tamanho: story ? 40 : 30, peso: "600", cor: "#CFE0FF", maxW: W - 140 }); y += story ? 60 : 42; }
+    if (story) {
+      texto(evento || "Quiz do Fusca", W / 2, y, { tamanho: 38, peso: "600", cor: "#CFE0FF", maxW: W - 140 }); y += 56;
+      texto(data, W / 2, y, { tamanho: 34, peso: "400", cor: "#9FB0D0" });
+    } else {
+      texto([evento, data].filter(Boolean).join(" · "), W / 2, y, { tamanho: 28, peso: "400", cor: "#9FB0D0", maxW: W - 140 });
+    }
+    rodape(W, H, story);
+  }
+
+  function rodape(W, H, story) {
+    const h = story ? 190 : 120;
+    ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.fillRect(0, H - h, W, h);
+    selo57(story ? 120 : 90, H - h / 2, story ? 56 : 38);
+    texto(PERFIL, story ? 200 : 150, H - h / 2 - (story ? 24 : 14), { tamanho: story ? 52 : 36, peso: "800", cor: "#fff", alinhar: "left", maxW: W - 260 });
+    texto(`O Fusca que fala  ${hashtags}`.trim(), story ? 200 : 150, H - h / 2 + (story ? 34 : 22), { tamanho: story ? 30 : 22, peso: "400", cor: "#C8D3EA", alinhar: "left", maxW: W - (story ? 260 : 190) });
+  }
+
+  // ---------------------------------------------------------------- moldura de foto
+  let limites = { maxX: 0, maxY: 0 };
+  let areaFoto = { x: 0, y: 0, w: 0, h: 0 };
+  function desenhaFoto() {
+    const [W, H] = tam(); tela.width = W; tela.height = H;
+    const story = st.formato === "story";
+    const frase = st.nome ? `${st.nome} conheceu o Herb57!` : "Eu conheci o Herb57!";
+    if (st.moldura === "polaroid") {
+      ctx.fillStyle = "#F6F3EC"; ctx.fillRect(0, 0, W, H);
+      const m = story ? 64 : 54;
+      const base = story ? 430 : 230;
+      areaFoto = { x: m, y: m, w: W - 2 * m, h: H - m - base };
+      ctx.fillStyle = "#D9D4C8"; ctx.fillRect(areaFoto.x, areaFoto.y, areaFoto.w, areaFoto.h);
+      if (st.foto) limites = cobrir(st.foto, areaFoto.x, areaFoto.y, areaFoto.w, areaFoto.h, st.zoom, st.ox, st.oy);
+      else texto("Toque em \"Tirar foto\"", W / 2, areaFoto.y + areaFoto.h / 2, { tamanho: 48, cor: "#8B8576" });
+      const yb = areaFoto.y + areaFoto.h;
+      texto(frase, W / 2, yb + (story ? 120 : 78), { tamanho: story ? 104 : 74, familia: "Caveat", peso: "700", cor: "#1F2937", maxW: W - 2 * m - 40 });
+      texto([evento, data].filter(Boolean).join(" · "), W / 2, yb + (story ? 222 : 140), { tamanho: story ? 36 : 28, peso: "600", cor: "#4B5563", maxW: W - 2 * m - 40 });
+      texto(`${PERFIL}  ${hashtags}`.trim(), W / 2, yb + (story ? 300 : 192), { tamanho: story ? 36 : 28, peso: "800", cor: "#2563EB", maxW: W - 2 * m - 40 });
+      selo57(W - m - (story ? 70 : 52), areaFoto.y + (story ? 70 : 52), story ? 54 : 40, "#ffffff", "#0B1220");
+    } else {
+      areaFoto = { x: 0, y: 0, w: W, h: H };
+      ctx.fillStyle = "#0B1220"; ctx.fillRect(0, 0, W, H);
+      if (st.foto) limites = cobrir(st.foto, 0, 0, W, H, st.zoom, st.ox, st.oy);
+      else texto("Toque em \"Tirar foto\"", W / 2, H / 2, { tamanho: 48, cor: "#6B7A99" });
+      const g = ctx.createLinearGradient(0, H * (story ? 0.58 : 0.45), 0, H);
+      g.addColorStop(0, "rgba(5,9,18,0)"); g.addColorStop(1, "rgba(5,9,18,.92)");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      const tg = ctx.createLinearGradient(0, 0, 0, 220);
+      tg.addColorStop(0, "rgba(5,9,18,.55)"); tg.addColorStop(1, "rgba(5,9,18,0)");
+      ctx.fillStyle = tg; ctx.fillRect(0, 0, W, 220);
+      if (hashtags) texto(hashtags, 54, 80, { tamanho: 36, peso: "800", cor: "#fff", alinhar: "left", maxW: W - 220, sombra: true });
+      selo57(W - 110, 110, story ? 62 : 52, "#ffffff", "#0B1220");
+      let y = H - (story ? 470 : 330);
+      texto(st.nome ? st.nome.toUpperCase() : "EU CONHECI", W / 2, y, { tamanho: story ? 120 : 92, familia: "Anton", peso: "400", cor: "#fff", maxW: W - 120, sombra: true });
+      y += story ? 130 : 96;
+      texto(st.nome ? "CONHECEU O HERB57" : "O HERB57", W / 2, y, { tamanho: story ? 120 : 92, familia: "Anton", peso: "400", cor: "#7FB2FF", maxW: W - 120, sombra: true });
+      y += story ? 110 : 80;
+      texto([evento, data].filter(Boolean).join(" · "), W / 2, y, { tamanho: story ? 38 : 30, peso: "600", cor: "#E2E8F5", maxW: W - 140, sombra: true });
+      y += story ? 70 : 52;
+      texto(PERFIL, W / 2, y, { tamanho: story ? 50 : 38, peso: "800", cor: "#fff", maxW: W - 140, sombra: true });
+    }
+  }
+
+  function desenha() { (st.modo === "medalha" ? desenhaMedalha : desenhaFoto)(); }
+
+  // ---------------------------------------------------------------- interface
+  function aplicaModo() {
+    $("aba-medalha").classList.toggle("on", st.modo === "medalha");
+    $("aba-foto").classList.toggle("on", st.modo === "foto");
+    $("painel-foto").classList.toggle("oculto", st.modo !== "foto");
+    $("op-moldura").classList.toggle("oculto", st.modo !== "foto");
+    $("sub").textContent = st.modo === "medalha" ? "Sua medalha do Quiz do Herb57" : "Sua foto com o Fusca que fala";
+    desenha();
+  }
+  if (!temQuiz) $("abas").classList.add("so-uma");
+  $("aba-medalha").onclick = () => { st.modo = "medalha"; aplicaModo(); };
+  $("aba-foto").onclick = () => { st.modo = "foto"; aplicaModo(); };
+  $("nome").value = st.nome;
+  $("nome").oninput = (e) => {
+    st.nome = limpa(e.target.value, 20);
+    try { localStorage.setItem("herb57_nome", st.nome); } catch (err) {}
+    desenha();
+  };
+  document.querySelectorAll("#formato button").forEach((b) => b.onclick = () => {
+    st.formato = b.dataset.f; st.ox = st.oy = 0;
+    document.querySelectorAll("#formato button").forEach((x) => x.classList.toggle("on", x === b)); desenha();
+  });
+  document.querySelectorAll("#moldura button").forEach((b) => b.onclick = () => {
+    st.moldura = b.dataset.m; st.ox = st.oy = 0;
+    document.querySelectorAll("#moldura button").forEach((x) => x.classList.toggle("on", x === b)); desenha();
+  });
+
+  // foto: câmera ou galeria
+  $("escolher").onclick = () => $("arquivo").click();
+  $("arquivo").onchange = (e) => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    const url = URL.createObjectURL(f);
+    const img = new Image();
+    img.onload = () => { st.foto = img; st.zoom = 1; st.ox = st.oy = 0; $("zoom").value = 1;
+      $("zoom-box").classList.remove("oculto"); $("escolher").textContent = "📷 Trocar foto"; desenha(); };
+    img.src = url;
+  };
+  $("zoom").oninput = (e) => { st.zoom = parseFloat(e.target.value); desenha(); };
+
+  // arrastar para enquadrar (com pinça de dois dedos para zoom)
+  const toques = new Map(); let dist0 = 0, zoom0 = 1;
+  const escala = () => tela.width / tela.getBoundingClientRect().width;
+  tela.addEventListener("pointerdown", (e) => { if (st.modo !== "foto" || !st.foto) return;
+    tela.setPointerCapture(e.pointerId); toques.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (toques.size === 2) { const [a, b] = [...toques.values()]; dist0 = Math.hypot(a.x - b.x, a.y - b.y); zoom0 = st.zoom; } });
+  tela.addEventListener("pointermove", (e) => { if (!toques.has(e.pointerId)) return;
+    const ant = toques.get(e.pointerId); toques.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (toques.size === 1) {
+      const k = escala();
+      st.ox = Math.max(-limites.maxX, Math.min(limites.maxX, st.ox + (e.clientX - ant.x) * k));
+      st.oy = Math.max(-limites.maxY, Math.min(limites.maxY, st.oy + (e.clientY - ant.y) * k));
+    } else if (toques.size === 2 && dist0) {
+      const [a, b] = [...toques.values()];
+      st.zoom = Math.max(1, Math.min(3, zoom0 * Math.hypot(a.x - b.x, a.y - b.y) / dist0)); $("zoom").value = st.zoom;
+    }
+    desenha(); });
+  const solta = (e) => { toques.delete(e.pointerId); if (toques.size < 2) dist0 = 0; };
+  tela.addEventListener("pointerup", solta); tela.addEventListener("pointercancel", solta);
+
+  // compartilhar / salvar
+  const nomeArq = () => `herb57-${st.modo}-${st.formato}.jpg`;
+  const legenda = () => (st.modo === "medalha"
+    ? `Fiz o Quiz do Fusca e virei ${nivel.titulo.join(" ").toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase())}! ${PERFIL} ${hashtags}`
+    : `Conheci o Herb57, o Fusca que fala! ${PERFIL} ${hashtags}`).trim();
+  const blob = () => new Promise((ok) => tela.toBlob(ok, "image/jpeg", 0.92));
+  async function copiaLegenda() {
+    try { await navigator.clipboard.writeText(legenda()); $("copiado").classList.remove("oculto");
+      setTimeout(() => $("copiado").classList.add("oculto"), 4000); } catch (e) {}
+  }
+  async function salvar() {
+    const b = await blob(); const a = document.createElement("a");
+    a.href = URL.createObjectURL(b); a.download = nomeArq(); document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  }
+  $("salvar").onclick = salvar;
+  $("compartilhar").onclick = async () => {
+    if (st.modo === "foto" && !st.foto) { $("escolher").click(); return; }
+    await copiaLegenda();
+    const b = await blob(); const arq = new File([b], nomeArq(), { type: "image/jpeg" });
+    if (navigator.canShare && navigator.canShare({ files: [arq] })) {
+      try { await navigator.share({ files: [arq], text: legenda() }); return; } catch (e) { if (e && e.name === "AbortError") return; }
+    }
+    salvar();
+  };
+
+  // ---------------------------------------------------------------- início
+  const fundo = new Image();
+  fundo.onload = () => { st.fundo = fundo; desenha(); };
+  fundo.src = FOTO_MEDALHA;
+  const fontes = ["400 40px Anton", "700 40px Caveat", "600 40px Inter", "800 40px Inter"];
+  Promise.all(fontes.map((f) => document.fonts.load(f).catch(() => null)))
+    .finally(() => { aplicaModo(); });
+  aplicaModo();
+})();
+</script>
+</body>
+</html>
