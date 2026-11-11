@@ -1,0 +1,5 @@
+Marca Herb57: vetores tirados dos adesivos do carro (fotos de 11/11/2026). Padrão completo no runbook.
+- herb57-letreiro.svg / herb57-letreiro-branco.svg: o "Herb57" escrito à mão do capô.
+- herb57-selo.svg: círculo 57 como no carro (disco branco, anel e dígitos #111111).
+- herb57-selo-traco.svg: só anel e dígitos, na cor do texto (currentColor), para fundo claro.
+Nunca redigitar "Herb57" ou o "57" em outra fonte; não esticar, inclinar nem recolorir o selo.
