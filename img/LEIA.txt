@@ -1,1 +1,5 @@
-Coloque aqui medalha.jpg (opcional): foto do Herb57 para o fundo da medalha, vertical, cerca de 1080 x 1920.
+Imagens da página da medalha (publicadas junto com index.html):
+- herb57-por-do-sol.jpg: foto do Herb57 no topo da página e da medalha (1600 x 900, placa borrada).
+- medalha-ouro.webp, medalha-prata.webp, medalha-azul.webp: medalha de cada nível, sem fundo.
+Para trocar a foto, mantenha o nome (ou ajuste FOTO_FUNDO no index.html), formato horizontal, até ~300 KB,
+e borre a placa antes de publicar.
