@@ -1,0 +1,7 @@
+Medalhas do Quiz do Fusca (decisão de 12/11/2026): versão "foto", arte fornecida pelo proprietário.
+- medalha-ouro.webp (Mestre), medalha-prata.webp (Especialista), medalha-bronze.webp (Amigo).
+- Recortadas do fundo preto com ferramentas/medalha/recorta_medalhas.py; o ouro tem o dourado clareado
+  (matiz +6°, saturação ×1,18, brilho ×1,16 só no metal) para não se confundir com o bronze.
+- geometria.json: largura/altura da imagem e centro (cx, cy) e raios (rx, ry) do disco, em pixels,
+  para posicionar a medalha pelo disco. A fita sai do topo da imagem.
+- Sem placar na medalha. Fita nas cores das faixas do carro.

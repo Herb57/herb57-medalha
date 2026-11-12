@@ -1,0 +1,4 @@
+Fotos de fundo da medalha (9:16, 1080 x 1920), placa do carro trocada por uma placa "HERB57".
+fundo-1: Jardim Botânico; fundo-2: palmeiras e céu (padrão); fundo-3: rodovia, de traseira; fundo-4: placa "SIGA".
+mini-N.jpg: miniaturas para a escolha do fundo. Posição da medalha e dos textos por foto: FUNDOS no index.html.
+Fotos com pessoas reconhecíveis ou placas de lugar não entram.
