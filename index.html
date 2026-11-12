@@ -200,11 +200,12 @@
 (() => {
   // ------------------------------------------------------------------ configuração
   const PERFIL = "@fusca.herb57";
-  const HASHTAG_FIXA = "#Herb57";
+  const HASHTAG_FIXA = "#Herb57";      // na imagem e na legenda
+  const HASHTAG_TEMA = "#Fusca";       // só na legenda (decisão de 12/11/2026: #Herb57 #Fusca #Evento)
   const NIVEIS = {
-    mestre:       { nome: "Mestre do Fusca Herb57",       titulo: "MESTRE DO FUSCA",       metal: "ouro",   cor: "#F2CB6E" },
-    especialista: { nome: "Especialista do Fusca Herb57", titulo: "ESPECIALISTA DO FUSCA", metal: "prata",  cor: "#E3E8F0" },
-    amigo:        { nome: "Amigo do Fusca Herb57",        titulo: "AMIGO DO FUSCA",        metal: "bronze", cor: "#E6A877" },
+    mestre:       { nome: "Mestre do Fusca",       titulo: "MESTRE DO FUSCA",       metal: "ouro",   cor: "#F2CB6E" },
+    especialista: { nome: "Especialista do Fusca", titulo: "ESPECIALISTA DO FUSCA", metal: "prata",  cor: "#E3E8F0" },
+    amigo:        { nome: "Amigo do Fusca",        titulo: "AMIGO DO FUSCA",        metal: "bronze", cor: "#E6A877" },
   };
   // posição do disco em cada medalha (img/medalhas/geometria.json)
   const MEDALHA = {
@@ -235,7 +236,9 @@
   const hoje = new Date();
   const data = limpa(P.get("d"), 12) || `${String(hoje.getDate()).padStart(2, "0")}/${String(hoje.getMonth() + 1).padStart(2, "0")}/${hoje.getFullYear()}`;
   const nivel = !temQuiz ? null : NIVEIS[r === t ? "mestre" : (r / t >= 0.6 ? "especialista" : "amigo")];
-  const hashtags = [HASHTAG_FIXA, hsEvento].filter(Boolean).join(" ");
+  const hashtags = [HASHTAG_FIXA, hsEvento].filter(Boolean).join(" ");   // rodapé da imagem
+  const hashtagsLegenda = [...new Set([HASHTAG_FIXA, HASHTAG_TEMA, hsEvento].filter(Boolean).map((h) => h.toLowerCase()))]
+    .map((h) => [HASHTAG_FIXA, HASHTAG_TEMA, hsEvento].find((x) => x && x.toLowerCase() === h)).join(" ");
   const linhaEvento = evento || (temaExtra ? `Quiz de ${temaExtra}` : (temQuiz ? "Quiz do Fusca" : ""));
 
   // ------------------------------------------------------------------ estado
@@ -535,8 +538,8 @@
 
   // enviar / guardar
   const legenda = () => (st.tela === "foto"
-    ? `Conheci o Herb57, o Fusca que fala! ${PERFIL} ${hashtags}`
-    : `Fiz o Quiz do Fusca e ganhei a medalha de ${nivel.nome}! ${PERFIL} ${hashtags}`).trim();
+    ? `Conheci o Herb57, o Fusca 1977 que fala! ${PERFIL}\n${hashtagsLegenda}`
+    : `Ganhei a medalha de ${nivel.nome} no quiz do Herb57, o Fusca 1977 que fala! ${PERFIL}\n${hashtagsLegenda}`).trim();
   const gerar = () => st.arquivo ? Promise.resolve(st.arquivo)
     : new Promise((ok) => { desenha(); tela.toBlob((b) => ok(new File([b], st.tela === "foto" ? "herb57-foto.jpg" : "herb57-medalha.jpg", { type: "image/jpeg" })), "image/jpeg", 0.9); });
   function baixar(arq) {
