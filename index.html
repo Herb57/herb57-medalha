@@ -234,7 +234,9 @@
   let hsEvento = limpa(P.get("hs"), 40).replace(/\s+/g, "");
   if (hsEvento && !hsEvento.startsWith("#")) hsEvento = "#" + hsEvento;
   const hoje = new Date();
-  const data = limpa(P.get("d"), 12) || `${String(hoje.getDate()).padStart(2, "0")}/${String(hoje.getMonth() + 1).padStart(2, "0")}/${hoje.getFullYear()}`;
+  let dLink = limpa(P.get("d"), 12);   // dd/mm/aaaa, ddmmaaaa ou ddmmaa (link curto do tablet)
+  if (/^\d{6}(\d\d)?$/.test(dLink)) dLink = `${dLink.slice(0, 2)}/${dLink.slice(2, 4)}/${dLink.length === 6 ? "20" + dLink.slice(4) : dLink.slice(4)}`;
+  const data = dLink || `${String(hoje.getDate()).padStart(2, "0")}/${String(hoje.getMonth() + 1).padStart(2, "0")}/${hoje.getFullYear()}`;
   const nivel = !temQuiz ? null : NIVEIS[r === t ? "mestre" : (r / t >= 0.6 ? "especialista" : "amigo")];
   const hashtags = [HASHTAG_FIXA, hsEvento].filter(Boolean).join(" ");   // rodapé da imagem
   const hashtagsLegenda = [...new Set([HASHTAG_FIXA, HASHTAG_TEMA, hsEvento].filter(Boolean).map((h) => h.toLowerCase()))]
