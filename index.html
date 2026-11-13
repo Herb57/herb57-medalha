@@ -16,6 +16,7 @@
    * Herb57 — página da medalha do Quiz do Fusca e da foto com o Herb57 (versão 3).
    * Hospedagem estática (GitHub Pages). A imagem é montada no próprio celular; nada é enviado a servidor.
    * Link gerado pelo Home Assistant no fim do quiz: ?r=acertos&t=total&tema=&ev=evento&hs=hashtag&d=data
+   * Sem ev e hs no link (QR impresso), o evento vem de eventos.json, pela data.
    * Sem r/t (QR impresso) a página abre direto na foto com o Herb57.
    * Decisões e padrão visual: MEDALHA.md e runbook (seção "Padrão visual da marca Herb57").
    */
@@ -230,18 +231,35 @@
   const temQuiz = Number.isFinite(r) && Number.isFinite(t) && t > 0 && r >= 0 && r <= t;
   const tema = limpa(P.get("tema"), 50);
   const temaExtra = tema && tema.toLowerCase() !== "fusca" ? tema : "";
-  const evento = limpa(P.get("ev"), 70);
-  let hsEvento = limpa(P.get("hs"), 40).replace(/\s+/g, "");
-  if (hsEvento && !hsEvento.startsWith("#")) hsEvento = "#" + hsEvento;
+  let evento = "", hsEvento = "", hashtags = "", hashtagsLegenda = "", linhaEvento = "";
   const hoje = new Date();
   let dLink = limpa(P.get("d"), 12);   // dd/mm/aaaa, ddmmaaaa ou ddmmaa (link curto do tablet)
   if (/^\d{6}(\d\d)?$/.test(dLink)) dLink = `${dLink.slice(0, 2)}/${dLink.slice(2, 4)}/${dLink.length === 6 ? "20" + dLink.slice(4) : dLink.slice(4)}`;
   const data = dLink || `${String(hoje.getDate()).padStart(2, "0")}/${String(hoje.getMonth() + 1).padStart(2, "0")}/${hoje.getFullYear()}`;
   const nivel = !temQuiz ? null : NIVEIS[r === t ? "mestre" : (r / t >= 0.6 ? "especialista" : "amigo")];
-  const hashtags = [HASHTAG_FIXA, hsEvento].filter(Boolean).join(" ");   // rodapé da imagem
-  const hashtagsLegenda = [...new Set([HASHTAG_FIXA, HASHTAG_TEMA, hsEvento].filter(Boolean).map((h) => h.toLowerCase()))]
-    .map((h) => [HASHTAG_FIXA, HASHTAG_TEMA, hsEvento].find((x) => x && x.toLowerCase() === h)).join(" ");
-  const linhaEvento = evento || (temaExtra ? `Quiz de ${temaExtra}` : (temQuiz ? "Quiz do Fusca" : ""));
+  function aplicaEvento(ev, hs) {
+    evento = limpa(ev, 70);
+    hsEvento = limpa(hs, 40).replace(/\s+/g, "");
+    if (hsEvento && !hsEvento.startsWith("#")) hsEvento = "#" + hsEvento;
+    hashtags = [HASHTAG_FIXA, hsEvento].filter(Boolean).join(" ");   // rodapé da imagem
+    const todas = [HASHTAG_FIXA, HASHTAG_TEMA, hsEvento].filter(Boolean);
+    hashtagsLegenda = [...new Set(todas.map((h) => h.toLowerCase()))].map((h) => todas.find((x) => x.toLowerCase() === h)).join(" ");
+    linhaEvento = evento || (temaExtra ? `Quiz de ${temaExtra}` : (temQuiz ? "Quiz do Fusca" : ""));
+  }
+  aplicaEvento(P.get("ev"), P.get("hs"));
+
+  // Evento do dia: o QR impresso não leva evento; a página procura em eventos.json (mantido pelo Home Assistant)
+  // o evento que vale na data da imagem. Só quando o link não traz evento nem hashtag. Sem resposta em 2,5 s, segue sem.
+  const diaISO = data.split("/").reverse().join("-");   // dd/mm/aaaa -> aaaa-mm-dd
+  const eventoDoDia = (P.get("ev") || P.get("hs")) ? Promise.resolve() : Promise.race([
+    fetch(`eventos.json?t=${Date.now()}`, { cache: "no-store" }).then((resp) => resp.ok ? resp.json() : null).then((j) => {
+      const lista = (j && Array.isArray(j.eventos) ? j.eventos : [])
+        .filter((e) => e && e.nome && e.de && e.de <= diaISO && diaISO <= (e.ate || e.de))
+        .sort((x, y) => (x.de < y.de ? 1 : -1));
+      if (lista.length) aplicaEvento(lista[0].nome, lista[0].hashtag);
+    }).catch(() => {}),
+    new Promise((ok) => setTimeout(ok, 2500)),
+  ]);
 
   // ------------------------------------------------------------------ estado
   const st = { tela: temQuiz ? "medalha" : "foto", fmt: "s", fundo: FUNDO_PADRAO, nome: "", foto: null, zoom: 1, ox: 0, oy: 0,
@@ -421,7 +439,7 @@
     $("m-titulo").textContent = `Parabéns, você acertou ${r} de ${t}!`;
     $("m-img").alt = `Sua medalha de ${nivel.nome}`;
     atualizaFormato(); atualizaNome();
-    await Promise.all([fontes, carrega("selo", "img/marca/herb57-selo.svg"), carrega("letreiro", "img/marca/herb57-letreiro-branco.svg"),
+    await Promise.all([fontes, eventoDoDia, carrega("selo", "img/marca/herb57-selo.svg"), carrega("letreiro", "img/marca/herb57-letreiro-branco.svg"),
       carrega("medalha", `img/medalhas/medalha-${nivel.metal}.webp`), carrega("fundo" + st.fundo, `img/fundos/fundo-${st.fundo + 1}.jpg`)]);
     atualiza(true);
   }
@@ -436,7 +454,7 @@
     $("f-img").hidden = false; $("f-ajuste").hidden = true; $("f-zoom-box").hidden = true; $("f-dica-ajuste").hidden = true;
     $("f-ajustar-txt").textContent = "Ajustar";
     atualizaFormato(); atualizaNome();
-    await Promise.all([fontes, carrega("selo", "img/marca/herb57-selo.svg"), carrega("letreiro", "img/marca/herb57-letreiro-branco.svg"),
+    await Promise.all([fontes, eventoDoDia, carrega("selo", "img/marca/herb57-selo.svg"), carrega("letreiro", "img/marca/herb57-letreiro-branco.svg"),
       tem ? null : carrega("fundo1", "img/fundos/fundo-2.jpg")]);
     atualiza(true);
   }

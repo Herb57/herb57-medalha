@@ -1,2 +1,5 @@
 Medalha e foto do Herb57: página publicada por GitHub Pages.
 Fonte da verdade: repositório privado Herb57/herb57, pasta site/ (guia MEDALHA.md). Edite lá e publique a mesma alteração aqui.
+
+Exceção: eventos.json existe só aqui. É o histórico de eventos, gravado pelo Home Assistant (pacote herb57_eventos)
+e editável à mão. Nunca copie outro arquivo por cima dele; antes de publicar, faça git pull (o HA também faz commits aqui).
