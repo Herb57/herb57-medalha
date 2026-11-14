@@ -1,4 +1,12 @@
 {
   "sobre": "Eventos do Herb57 para a página da medalha. Mantido pelo Home Assistant (pacote herb57_eventos); pode ser editado à mão. Datas no formato aaaa-mm-dd; ate = último dia.",
-  "eventos": []
+  "eventos": [
+    {
+      "de": "2026-11-14",
+      "ate": "2026-11-15",
+      "nome": "XV Encontro de Fuscas e Derivados de São Marcos",
+      "cidade": "São Marcos",
+      "hashtag": "fuscar"
+    }
+  ]
 }
